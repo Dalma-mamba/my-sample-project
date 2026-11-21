@@ -3,6 +3,21 @@ import ExternalServices from "./ExternalServices.mjs";
 import ProductModal from "./ProductModal.mjs";
 
 function productCardTemplate(product) {
+  const finalPrice = Number(product.FinalPrice ?? product.ListPrice);
+  const suggestedRetailPrice = Number(product.SuggestedRetailPrice);
+  const isDiscounted =
+    Number.isFinite(finalPrice) &&
+    Number.isFinite(suggestedRetailPrice) &&
+    finalPrice < suggestedRetailPrice;
+
+  const priceMarkup = isDiscounted
+    ? `
+        <span class="product-card__original-price">$${suggestedRetailPrice.toFixed(2)}</span>
+        <span class="product-card__discount-price">$${finalPrice.toFixed(2)}</span>
+        <span class="discount-flag">Discount</span>
+      `
+    : `<span class="product-card__discount-price">$${finalPrice.toFixed(2)}</span>`;
+
   return `
     <li class="product-card">
       <a href="/product_pages/?product=${product.Id}">
@@ -13,11 +28,10 @@ function productCardTemplate(product) {
         <h3 class="card__brand">${product.Brand.Name}</h3>
         <h2 class="card__name">${product.Name}</h2>
         <p class="product-card__price">
-          <span class="product-card__original-price">$${product.SuggestedRetailPrice.toFixed(2)}</span>
-          <span class="product-card__discount-price">$${product.ListPrice}</span>
+          ${priceMarkup}
         </p>
-        </a>
-        <button id="quickViewBtn" class="button--small" data-id="${product.Id}">Quick View</button>
+      </a>
+      <button id="quickViewBtn" class="button--small" data-id="${product.Id}">Quick View</button>
     </li>`;
 }
 
@@ -74,35 +88,24 @@ export default class ProductListing {
 
   // Initialize the product listing and fetch the data
   async init() {
-    const searchTerm = new URLSearchParams(window.location.search).get("search");
-    const list = searchTerm
-      ? await this.dataSource.searchByTerm(searchTerm)
-      : await this.dataSource.getData(this.category);
-    this.products = Array.isArray(list) ? list : [];
+    const list = await this.dataSource.getData(this.category);
+    this.products = list;
     // render the list
-    this.renderList(this.products);
+    this.renderList(list);
 
     // Sort the products/list by price or name
     const sortElement = document.getElementById("sort");
     sortElement.addEventListener("change", (event) => {
-      const sortedList = this.sortList([...this.products], event.target.value);
+      const sortedList = this.sortList(list, event.target.value);
       this.renderList(sortedList);
     });
 
     //set the title to the current category
     // Capitalize the first letter of the category
-    const title = searchTerm
-      ? `Search results for: ${searchTerm}`
-      : this.category
-        ? this.category.charAt(0).toUpperCase() + this.category.slice(1)
-        : "Products";
-    document.querySelector(".title").textContent = title;
-    if (searchTerm) {
-      document.querySelector("#breadcrumbs").textContent =
-        `${this.products.length} search results`;
-    } else {
-      this.handleBrandCrumbs();
-    }
+    const title =
+      this.category.charAt(0).toUpperCase() + this.category.slice(1);
+    document.querySelector(".title").innerHTML = title;
+    this.handleBrandCrumbs();
 
     // event listener to trigger the modal
     document.addEventListener("click", function (e) {

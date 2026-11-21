@@ -79,22 +79,31 @@ export async function loadHeaderFooter() {
 }
 
 function searchProducts() {
-  const searchForm = document.getElementById("searchForm");
-  const searchInput = document.getElementById("searchInput");
+  const sButton = document.getElementById("searchButton");
+  sButton.addEventListener("click", function (e) {
+    const searchTerm = document.getElementById("searchInput").value;
 
-  if (!searchForm || !searchInput) return;
-
-  searchForm.addEventListener("submit", (event) => {
-    event.preventDefault();
-    const searchTerm = searchInput.value.trim();
-    if (searchTerm) performSearch(searchTerm);
+    performSearch(searchTerm);
   });
 }
 
 export function performSearch(term) {
+  console.log("Performing search for:", term);
+
+  // Create the URL with the search term as a query parameter
   const searchParams = new URLSearchParams();
-  searchParams.set("search", term.trim());
-  window.location.href = `/product-listing/index.html?${searchParams.toString()}`;
+  searchParams.append("category", term);
+
+  // Get the current URL without the query string
+  const baseUrl = `${window.location.origin}/`;
+  console.log("Base URL:", baseUrl);
+
+  // Construct the full URL
+  const newUrl = `product-listing/index.html?${searchParams.toString()}`;
+  console.log("New URL:", newUrl);
+
+  // Navigate to the new URL
+  window.location.href = baseUrl + newUrl;
 }
 
 //add superscript to cart icon

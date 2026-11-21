@@ -28,7 +28,7 @@ export default class ExternalServices {
   }
 
   async searchByTerm(term) {
-    const response = await fetch(`${baseURL}products/search?term=${encodeURIComponent(term)}`);
+    const response = await fetch(`${baseURL}products/search?term=${term}`);
     const data = await convertToJson(response);
     return data.Result;
   }
